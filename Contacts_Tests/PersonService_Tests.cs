@@ -152,7 +152,7 @@ namespace Services.Tests
             var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
             var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
             var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
-            
+
             var result = _personService.GetPersonListFiltered(searchBy, searchString);
 
             Assert.AreEqual(2, result?.Count());
@@ -230,7 +230,7 @@ namespace Services.Tests
             var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
             var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
             var _personList = _personService.GetPersonList();
-          
+
             var result = _personService.GetPersonListOrdered(_personList, orderBy);
 
             // Assert
@@ -339,7 +339,116 @@ namespace Services.Tests
             var expected = _personList.OrderByDescending(x => x.Email, StringComparer.OrdinalIgnoreCase).ToList();
             Assert.IsTrue(result.SequenceEqual(expected));
         }
-#endregion
+        #endregion
 
+        #region UpdatePerson
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void UpdatePerson_ShouldThrowArgumentNullException_WhenRequestIsNull()
+        {
+            _personService.UpdatePerson(null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void UpdatePerson_ShouldThrowArgumentException_WhenPersonNotFound()
+        {
+            // Arrange
+            var updateRequest = new PersonUpdateRequest
+            {
+                Id = Guid.NewGuid(), // Non-existing Id
+                Name = "John Updated",
+                Address = "New Address",
+                Gender = Gender.Male,
+                Email = "john.updated@example.com",
+                CountryId = new Guid(),
+                DateOfBirth = new DateTime(1985, 1, 1)
+            };
+
+            _personService.UpdatePerson(updateRequest);
+        }
+
+        [TestMethod]
+        public void UpdatePerson_ShouldUpdatePersonSuccessfully()
+        {
+            _personService.AddPerson(new PersonAddRequest { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1), CountryId = new Guid() });
+            _personService.AddPerson(new PersonAddRequest { Name = "Jane Smith", Gender = Gender.Female, Address = "456 Oak St", Email = "jane.smith@example.com", DateOfBirth = new DateTime(1990, 2, 2), CountryId = new Guid() });
+            var _personList = _personService.GetPersonList();
+
+            var existingPerson = _personList.First();
+
+            var updateRequest = new PersonUpdateRequest
+            {
+                Id = existingPerson.Id,
+                Name = "John Updated",
+                Address = "New Address",
+                Gender = Gender.Male,
+                Email = "john.updated@example.com",
+                CountryId = new Guid(),
+                DateOfBirth = new DateTime(1985, 1, 1)
+            };
+
+            var updatedPersonResponse = _personService.UpdatePerson(updateRequest);
+
+            Assert.AreEqual(updateRequest.Name, updatedPersonResponse.Name);
+            Assert.AreEqual(updateRequest.Address, updatedPersonResponse.Address);
+            Assert.AreEqual(updateRequest.Gender.ToString(), updatedPersonResponse.Gender);
+            Assert.AreEqual(updateRequest.Email, updatedPersonResponse.Email);
+            Assert.AreEqual(updateRequest.CountryId, updatedPersonResponse.CountryId);
+            Assert.AreEqual(updateRequest.DateOfBirth, updatedPersonResponse.DateOfBirth);
+        }
+
+        #endregion
+
+        #region DeletePerson
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void DeletePerson_ShouldThrowArgumentNullException_WhenIdIsNull()
+        {
+            _personService.DeletePerson(null);
+        }
+
+        [TestMethod]
+        public void DeletePerson_ShouldReturnFalse_WhenPersonNotFound()
+        {
+            var nonExistentId = Guid.NewGuid();
+
+            var result = _personService.DeletePerson(nonExistentId);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void DeletePerson_ShouldReturnTrue_WhenPersonIsDeleted()
+        {
+            _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1), CountryId = new Guid() });
+            _personService.AddPerson(new PersonAddRequest() { Name = "Jane Smith", Gender = Gender.Female, Address = "456 Oak St", Email = "jane.smith@example.com", DateOfBirth = new DateTime(1990, 2, 2), CountryId = new Guid() });
+            var _personList = _personService.GetPersonList();
+
+            var existingPersonId = _personList.First().Id;
+
+            var result = _personService.DeletePerson(existingPersonId);
+            _personList = _personService.GetPersonList();
+
+            Assert.IsTrue(result);
+            Assert.IsFalse(_personList.Any(x => x.Id == existingPersonId));
+        }
+
+        [TestMethod]
+        public void DeletePerson_ShouldDecreaseCount_WhenPersonIsDeleted()
+        {
+            _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1), CountryId = new Guid() });
+            _personService.AddPerson(new PersonAddRequest() { Name = "Jane Smith", Gender = Gender.Female, Address = "456 Oak St", Email = "jane.smith@example.com", DateOfBirth = new DateTime(1990, 2, 2), CountryId = new Guid() });
+            var _personList = _personService.GetPersonList();
+
+            var existingPersonId = _personList.First().Id;
+            var initialCount = _personList.Count();
+
+            _personService.DeletePerson(existingPersonId);
+            _personList = _personService.GetPersonList();
+
+            Assert.AreEqual(initialCount - 1, _personList.Count());
+        }
+        #endregion
     }
 }

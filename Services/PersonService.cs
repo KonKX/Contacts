@@ -45,6 +45,27 @@ namespace Services
         }
         #endregion
 
+        #region DeletePerson
+        public bool DeletePerson(Guid? id)
+        {
+            if (id == null) 
+            {
+                throw new ArgumentNullException("Please provide an ID");
+
+            }
+
+            var personToDelete = _persons.FirstOrDefault(x => x.Id == id);
+            if (personToDelete == null)
+            {
+                return false;
+            }
+
+            _persons.RemoveAll(x => x.Id == id);
+
+            return true;
+        }
+        #endregion
+
         #region GetPersonById
         public PersonResponse? GetPersonById(Guid? id)
         {
@@ -135,6 +156,35 @@ namespace Services
 
             return orderedPersonList;
 
+        }
+        #endregion
+
+        #region UpdatePerson
+        public PersonResponse UpdatePerson(PersonUpdateRequest? personUpdateRequest)
+        {
+            if (personUpdateRequest == null)
+            {
+                throw new ArgumentNullException(nameof(personUpdateRequest));
+            }
+
+            //Validation
+            ValidationHelper.ModelValidation(personUpdateRequest);
+
+            var matchingPerson = _persons.FirstOrDefault(x => x.Id == personUpdateRequest.Id);
+
+            if (matchingPerson == null)
+            {
+                throw new ArgumentException("Person not found.");
+            }
+            
+            matchingPerson.Name = personUpdateRequest.Name;
+            matchingPerson.Address = personUpdateRequest.Address;
+            matchingPerson.Gender = personUpdateRequest.Gender.ToString();
+            matchingPerson.Email = personUpdateRequest.Email;
+            matchingPerson.CountryId = personUpdateRequest.CountryId;
+            matchingPerson.DateOfBirth = personUpdateRequest.DateOfBirth;
+
+            return matchingPerson.ToPersonResponse();
         }
         #endregion
     }

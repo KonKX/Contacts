@@ -6,7 +6,7 @@ namespace ServiceContracts
     public interface IPersonService
     {
         /// <summary>
-        /// Add a new person to the list.
+        /// Add a new person to the contact list.
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -18,24 +18,36 @@ namespace ServiceContracts
         /// <returns></returns>
         public PersonResponse? GetPersonById(Guid? id);
         /// <summary>
-        /// Get the full list of persons.
+        /// Get the full contact list of persons.
         /// </summary>
         /// <returns></returns>
         public IEnumerable<PersonResponse> GetPersonList();
         /// <summary>
-        /// Get a filtered list of persons.
+        /// Get the filtered contact list of persons.
         /// </summary>
         /// <param name="searchBy"></param>
         /// <param name="searchString"></param>
         /// <returns></returns>
         public IEnumerable<PersonResponse> GetPersonListFiltered(string? searchBy, string? searchString);
         /// <summary>
-        /// Get an ordered list of persons.
+        /// Get the ordered list of persons in contact list.
         /// </summary>
         /// <param name="personList"></param>
         /// <param name="orderBy"></param>
         /// <param name="orderType"></param>
         /// <returns></returns>
         public IEnumerable<PersonResponse> GetPersonListOrdered(IEnumerable<PersonResponse> personList, string? orderBy, SortOrderOptions? orderType);
+       /// <summary>
+       /// Update a person in contact list.
+       /// </summary>
+       /// <param name="personUpdateRequest"></param>
+       /// <returns></returns>
+        public PersonResponse UpdatePerson(PersonUpdateRequest? personUpdateRequest);
+        /// <summary>
+        /// Delete a person from contact list.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool DeletePerson(Guid? id);
     }
 }
