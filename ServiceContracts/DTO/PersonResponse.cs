@@ -13,6 +13,7 @@ namespace ServiceContracts.DTO
         public Guid Id { get; set; }
         public string? Name { get; set; }
         public string? Gender { get; set; }
+        public string? Phone { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public double? Age { get; set; }
         public string? Address { get; set; }
@@ -31,6 +32,7 @@ namespace ServiceContracts.DTO
                 Id = person.Id,
                 Name = person.Name,
                 Gender = person.Gender,
+                Phone = person.Phone,
                 DateOfBirth = person.DateOfBirth,
                 Age = (person.DateOfBirth != null) ? Math.Round((DateTime.Now - person.DateOfBirth.Value).TotalDays / 365.25) : null,
                 Address = person.Address,

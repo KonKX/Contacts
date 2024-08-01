@@ -16,6 +16,7 @@ namespace ServiceContracts.DTO
         [Required(ErrorMessage = "Name is required.")]
         public string? Name { get; set; }
         public Gender? Gender { get; set; }
+        public string? Phone { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public string? Address { get; set; }
         public Guid? CountryId { get; set; }
@@ -31,6 +32,7 @@ namespace ServiceContracts.DTO
                 Name = Name,
                 Gender = Gender.ToString(),
                 DateOfBirth = DateOfBirth,
+                Phone = Phone,
                 Address = Address,
                 CountryId = CountryId,
                 Email = Email
