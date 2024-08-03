@@ -41,7 +41,7 @@ namespace Services
             {
                 _persons.Add(person);
             }
-
+            var personResponse = person.ToPersonResponse();
             return person.ToPersonResponse();
         }
         #endregion
@@ -107,19 +107,22 @@ namespace Services
             //For this part reflection could also be used...
             switch (searchBy)
             {
-                case nameof(Person.Name):
+                case nameof(PersonResponse.Name):
                     matchingPersonList = fullPersonList.Where(x => (string.IsNullOrEmpty(x.Name) || x.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)));
                     break;
-                case nameof(Person.Gender):
-                    matchingPersonList = fullPersonList.Where(x => (string.IsNullOrEmpty(x.Gender) || x.Gender.Contains(searchString, StringComparison.OrdinalIgnoreCase)));
+                case nameof(PersonResponse.Gender):
+                    matchingPersonList = fullPersonList.Where(x => (string.IsNullOrEmpty(x.Gender) || x.Gender.Equals(searchString, StringComparison.OrdinalIgnoreCase)));
                     break;
-                case nameof(Person.Address):
+                case nameof(PersonResponse.Address):
                     matchingPersonList = fullPersonList.Where(x => (string.IsNullOrEmpty(x.Address) || x.Address.Contains(searchString, StringComparison.OrdinalIgnoreCase)));
                     break;
-                case nameof(Person.Email):
+                case nameof(PersonResponse.CountryName):
+                    matchingPersonList = fullPersonList.Where(x => (string.IsNullOrEmpty(x.CountryName) || x.CountryName.Contains(searchString, StringComparison.OrdinalIgnoreCase)));
+                    break;
+                case nameof(PersonResponse.Email):
                     matchingPersonList = fullPersonList.Where(x => (string.IsNullOrEmpty(x.Email) || x.Email.Contains(searchString, StringComparison.OrdinalIgnoreCase)));
                     break;
-                case nameof(Person.DateOfBirth):
+                case nameof(PersonResponse.DateOfBirth):
                     matchingPersonList = fullPersonList.Where(x => x.DateOfBirth == null || x.DateOfBirth.Value.ToString("dd MMMM yyyy").Contains(searchString, StringComparison.OrdinalIgnoreCase));
                     break;
                 default:

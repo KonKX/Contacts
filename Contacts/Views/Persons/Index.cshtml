@@ -3,32 +3,61 @@
     ViewBag.Title = "Persons";
 }
 
-<h1>List</h1>
+<form action="~/persons/index" method="get">
+    <h1>Contacts List</h1>
 
-<table class="table w-100 mt">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Gender</th>
-            <th>Phone</th>
-            <th>Date of Birth</th>
-            <th>Age</th>
-            <th>Email</th>
-            <th>Address</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (PersonResponse person in Model)
-        {
+    <div class="box flex">
+        <div class="flex-1">
+            <select class="form-input" name="searchBy">
+                @foreach (var entry in ViewBag.SearchOptions)
+                {
+                    @if (entry.Key == ViewBag.CurrentSearchBy)
+                    {
+                        <option value=@entry.Key selected="selected">@entry.Value</option>
+                    }
+                    else
+                    {
+                        <option value=@entry.Key>@entry.Value</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="flex-1">
+            <input type="search" id="Search" class="form-input" placeholder="Search" name="searchString" value=@ViewBag.CurrentSearchString />
+        </div>
+        <div class="flex-1">
+            <button class="button button-blue-back">Search</button>
+            <a href="~/persons/index" class="link-hover">Clear all</a>
+        </div>
+    </div>
+
+    <table class="table w-100 mt">
+        <thead>
             <tr>
-                <td>@person.Name</td>
-                <td>@person.Gender</td>
-                <td>@person.Phone</td>
-                <td>@person.DateOfBirth?.ToString("dd MMMM yyyy")</td>
-                <td>@person.Age</td>
-                <td>@person.Email</td>
-                <td>@person.Address</td>
+                <th>Name</th>
+                <th>Gender</th>
+                <th>Phone</th>
+                <th>Date of Birth</th>
+                <th>Age</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Country</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (PersonResponse person in Model)
+            {
+                <tr>
+                    <td>@person.Name</td>
+                    <td>@person.Gender</td>
+                    <td>@person.Phone</td>
+                    <td>@person.DateOfBirth?.ToString("dd MMMM yyyy")</td>
+                    <td>@person.Age</td>
+                    <td>@person.Email</td>
+                    <td>@person.Address</td>
+                    <td>@person.CountryName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</form>

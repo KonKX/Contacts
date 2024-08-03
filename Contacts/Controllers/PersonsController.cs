@@ -5,36 +5,83 @@ using ServiceContracts.Enums;
 
 namespace Contacts.Controllers
 {
+    [Route("[controller]")]
     public class PersonsController : Controller
     {
         private readonly IPersonService _personService;
         private readonly ICountryService _countryService;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        public PersonsController(IPersonService personService, ICountryService countryService, IWebHostEnvironment environment) 
-        { 
+        public PersonsController(IPersonService personService, ICountryService countryService, IWebHostEnvironment environment)
+        {
             _personService = personService;
             _countryService = countryService;
             _webHostEnvironment = environment;
         }
 
-        [Route("persons/index")]
+        [Route("[action]")]
         [Route("/")]
-        public IActionResult Index()
+        public IActionResult Index(string? searchBy, string? searchString)
         {
             if (_webHostEnvironment.IsDevelopment())
             {
-                var country_1 = _countryService.AddCountry(new CountryAddRequest() { Name = "Test Country 1" });
-                var country_2 = _countryService.AddCountry(new CountryAddRequest() { Name = "Test Country 2" });
-                _personService.AddPerson(new PersonAddRequest() { Name = "Test name 1", Address = "test address 1", CountryId = country_1.Id, DateOfBirth = DateTime.Parse("1999-01-01"), Email = "test_email_1@gmail.com", Gender = Gender.Male, Phone = "6954157890" });
-                _personService.AddPerson(new PersonAddRequest() { Name = "Test name 2", Address = "test address 2", CountryId = country_2.Id, DateOfBirth = DateTime.Parse("2000-01-02"), Email = "test_email_2@gmail.com", Gender = Gender.Male, Phone = "6974587815" });
-                _personService.AddPerson(new PersonAddRequest() { Name = "Test name 3", Address = "test address 3", CountryId = country_1.Id, DateOfBirth = DateTime.Parse("1992-08-03"), Email = "test_email_3@gmail.com", Gender = Gender.Female, Phone = "6934247817" });
-                _personService.AddPerson(new PersonAddRequest() { Name = "Test name 4", Address = "test address 4", CountryId = country_2.Id, DateOfBirth = DateTime.Parse("1993-02-04"), Email = "test_email_4@gmail.com", Gender = Gender.Male, Phone = "6935967196" });
+                if (_countryService.GetCountryList().Count() == 0)
+                {
+                    _countryService.AddCountry(new CountryAddRequest() { Name = "USA" });
+                    _countryService.AddCountry(new CountryAddRequest() { Name = "Greece" });
+                }
+                if (_personService.GetPersonList().Count() == 0)
+                {
+                    _personService.AddPerson(new PersonAddRequest() { Name = "Joe Rogan", Address = "South Bronx", CountryId = _countryService.GetCountryList().ToList()[0].Id, DateOfBirth = DateTime.Parse("1969-01-01"), Email = "test_email_1@gmail.com", Gender = Gender.Male, Phone = "6954157890" });
+                    _personService.AddPerson(new PersonAddRequest() { Name = "Kyriakos Grizzly", Address = "Sideradiko", CountryId = _countryService.GetCountryList().ToList()[1].Id, DateOfBirth = DateTime.Parse("1961-01-02"), Email = "test_email_2@gmail.com", Gender = Gender.Male, Phone = "6974587815" });
+                    _personService.AddPerson(new PersonAddRequest() { Name = "Pepa", Address = "Nea Erythraia", CountryId = _countryService.GetCountryList().ToList()[1].Id, DateOfBirth = DateTime.Parse("1992-08-03"), Email = "test_email_3@gmail.com", Gender = Gender.Female, Phone = "6934247817" });
+                    _personService.AddPerson(new PersonAddRequest() { Name = "Tony Montana", Address = "Brooklyn", CountryId = _countryService.GetCountryList().ToList()[0].Id, DateOfBirth = DateTime.Parse("1973-02-04"), Email = "test_email_4@gmail.com", Gender = Gender.Male, Phone = "6935967196" });
+                }
             }
 
-            return View(_personService.GetPersonList());
+            ViewBag.SearchOptions = new Dictionary<string, string>()
+            {
+                { nameof(PersonResponse.Name),"Name"},
+                { nameof(PersonResponse.Gender),"Gender"},
+                { nameof(PersonResponse.Phone),"Phone"},
+                { nameof(PersonResponse.DateOfBirth),"Date of Birth"},
+                { nameof(PersonResponse.Age),"Age"},
+                { nameof(PersonResponse.Email),"Email"},
+                { nameof(PersonResponse.Address),"Address"},
+                { nameof(PersonResponse.CountryName),"Country"}
+            };
+            ViewBag.currentSearchBy = searchBy;
+            ViewBag.currentSearchString = searchString;
+
+            IEnumerable<PersonResponse> listOfPersons = _personService.GetPersonListFiltered(searchBy, searchString);
+            return View(listOfPersons);
+        }
+        [Route("[action]")]
+        [HttpGet]
+        public IActionResult Create()
+        {
+            ViewBag.Countries = _countryService.GetCountryList();
+            return View();
         }
 
-        [Route("persons/about")]
+        [Route("[action]")]
+        [HttpPost]
+        public IActionResult Create(PersonAddRequest personAddRequest)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Countries = _countryService.GetCountryList();
+
+                ViewBag.Errors = ModelState.Values
+                    .SelectMany(x => x.Errors)
+                    .Select(x => x.ErrorMessage).ToList();
+                return View();
+            }
+
+            _personService.AddPerson(personAddRequest);
+            return RedirectToAction("Index", "Persons");
+        }
+
+        [Route("[action]")]
         public IActionResult About()
         {
             return View();
