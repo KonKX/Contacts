@@ -23,7 +23,7 @@ namespace Services
             }
 
             //Model validation
-            ValidationHelper.ModelValidation(request);
+            //ValidationHelper.ModelValidation(request);
 
             Country country = request.ToCountry();
             country.Id = Guid.NewGuid();

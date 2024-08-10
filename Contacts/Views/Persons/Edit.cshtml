@@ -1,58 +1,67 @@
 ﻿@model PersonResponse
+
 @{
-    ViewBag.Title = "Create Person";
+    ViewData["Title"] = "Edit";
 }
 <a asp-action="Index" class="link-hover">Back to Persons List</a>
-<h2>Create Person</h2>
+<h1>Edit Person</h1>
 
 <div class="w-50">
-    <form asp-action="create" method="post">
+    <form asp-action="Edit" method="post">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-        @*PersonName*@
+
+        @* Id *@
+        <div class="form-field flex">
+            <div class="flex-1">
+                <input asp-for="Id" class="form-control" hidden/>
+            </div>
+        </div>
+
+        @* Name *@
         <div class="form-field flex">
             <div class="w-25">
-                <label asp-for="Name" class="form-label pt"></label>
+                <label asp-for="Name" class="control-label"></label>
             </div>
             <div class="flex-1">
-                <input asp-for="Name" class="form-input" />
+                <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
         </div>
 
-        @*Phone*@
+        @* Phone *@
         <div class="form-field flex">
             <div class="w-25">
-                <label asp-for="Phone" class="form-label pt"></label>
+                <label asp-for="Phone" class="control-label"></label>
             </div>
             <div class="flex-1">
-                <input asp-for="Phone" class="form-input" />
+                <input asp-for="Phone" class="form-control" />
                 <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
         </div>
 
-        @*Email*@
+        @* Email *@
         <div class="form-field flex">
             <div class="w-25">
-                <label asp-for="Email" class="form-label pt"></label>
+                <label asp-for="Email" class="control-label"></label>
             </div>
             <div class="flex-1">
-                <input asp-for="Email" class="form-input" />
+                <input asp-for="Email" class="form-control" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
         </div>
 
-        @*DateOfBirth*@
+        @* Date of birth *@
         <div class="form-field flex">
             <div class="w-25">
-                <label asp-for="DateOfBirth" class="form-label pt"></label>
+                <label asp-for="DateOfBirth" class="control-label"></label>
             </div>
             <div class="flex-1">
-                <input asp-for="DateOfBirth" class="form-input" type="date" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                <input asp-for="DateOfBirth" class="form-control" type="date" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                 <span asp-validation-for="DateOfBirth" class="text-danger"></span>
             </div>
         </div>
 
-        @*Gender*@
+        @* Gender *@
         <div class="form-field flex">
             <div class="w-25">
                 <label asp-for="Gender" class="form-label"></label>
@@ -60,10 +69,9 @@
             <div class="flex-1">
                 @{
                     string[] genders = (string[])Enum.GetNames(typeof(Gender));
-                    var counter = 0;
                     foreach (var gender in genders)
                     {
-                        if (counter == 0)
+                        if (gender == Model.Gender)
                         {
                             <input type="radio" asp-for="Gender" value="@gender" checked="checked" />
 
@@ -73,31 +81,38 @@
                             <input type="radio" asp-for="Gender" value="@gender" />
                         }
                         <label for="@gender">@gender</label>
-                        counter++;
                     }
                 }
                 <span asp-validation-for="Gender" class="text-danger"></span>
             </div>
         </div>
 
-        @*Country*@
+        @* Country Name *@
         <div class="form-field flex">
             <div class="w-25">
-                <label asp-for="CountryName" class="form-label"></label>
+                <label class="form-label" asp-for="CountryName"></label>
             </div>
             <div class="flex-1">
                 <select name="CountryID" id="CountryID" class="form-input">
-                    <option value="">Please Select</option>
+                    @if (ViewBag.PersonCountryId == null)
+                    {
+                        <option value="">Please Select</option>
+                    }
+                    else
+                    {
+                        <option value="@ViewBag.PersonCountryId">@ViewBag.PersonCountryName</option>
+                    }
+
                     @foreach (CountryResponse country in ViewBag.Countries)
                     {
                         <option value="@country.Id">@country.Name</option>
                     }
                 </select>
-                <span asp-validation-for="CountryName" class="text-danger"></span>
+                            <span asp-validation-for="CountryId" class="text-danger"></span>
             </div>
         </div>
 
-        @*Address*@
+        @* Address *@
         <div class="form-field flex">
             <div class="w-25">
                 <label asp-for="Address" class="form-label pt"></label>
@@ -108,26 +123,15 @@
             </div>
         </div>
 
-        @*Submit*@
-        <div class="form-field flex">
-            <div class="w-25">
-            </div>
-            <div class="flex-1">
-                <button class="button button-green-back">Create</button>
-
-                @*  @if (ViewBag.Errors != null)
-                {
-                <div class="text-red ml">
-                <ul>
-                @foreach (string error in ViewBag.Errors)
-                {
-                <li class="ml">@error</li>
-                }
-                </ul>
-                </div>
-                } *@
-            </div>
+        @* Submit *@
+        <div class="flex-1">
+            <button class="button button-green-back">Save</button>
         </div>
-
     </form>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

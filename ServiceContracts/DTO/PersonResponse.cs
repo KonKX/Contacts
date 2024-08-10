@@ -1,24 +1,27 @@
 ﻿using Domain;
-using ServiceContracts.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace ServiceContracts.DTO
 {
     public class PersonResponse
     {
         public Guid Id { get; set; }
+        [Display(Name = "Name")]
         public string? Name { get; set; }
+        [Display(Name = "Gender")]
         public string? Gender { get; set; }
+        [Display(Name = "Phone")]
         public string? Phone { get; set; }
+        [Display(Name = "Date Of Birth")]
         public DateTime? DateOfBirth { get; set; }
+        [Display(Name = "Age")]
         public double? Age { get; set; }
+        [Display(Name = "Address")]
         public string? Address { get; set; }
         public Guid? CountryId { get; set; }
+        [Display(Name = "Country")]
         public string? CountryName { get; set; }
+        [Display(Name = "Email")]
         public string? Email { get; set; }
     }
 

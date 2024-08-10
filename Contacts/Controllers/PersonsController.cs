@@ -71,13 +71,48 @@ namespace Contacts.Controllers
             {
                 ViewBag.Countries = _countryService.GetCountryList();
 
-                ViewBag.Errors = ModelState.Values
-                    .SelectMany(x => x.Errors)
-                    .Select(x => x.ErrorMessage).ToList();
+                //ViewBag.Errors = ModelState.Values
+                //    .SelectMany(x => x.Errors)
+                //    .Select(x => x.ErrorMessage).ToList();
                 return View();
             }
 
             _personService.AddPerson(personAddRequest);
+            return RedirectToAction("Index", "Persons");
+        }
+
+        [Route("[action]")]
+        [HttpGet]
+        public ActionResult Edit(Guid id)
+        {
+            var person = _personService.GetPersonById(id);
+            ViewBag.Countries = _countryService.GetCountryList();
+            ViewBag.PersonCountryId = person?.CountryId;
+            ViewBag.PersonCountryName = person?.CountryName;
+            return View(person);
+        }
+
+        [Route("[action]")]
+        [HttpPost]
+        public ActionResult Edit(PersonUpdateRequest person)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Countries = _countryService.GetCountryList();
+
+                //ViewBag.Errors = ModelState.Values
+                //    .SelectMany(x => x.Errors)
+                //    .Select(x => x.ErrorMessage).ToList();
+                return View(person.ToPersonResponse());
+            }
+            _personService.UpdatePerson(person);
+            return RedirectToAction("Index", "Persons");
+        }
+
+        [Route("[action]")]
+        public IActionResult Delete(Guid id)
+        {
+            _personService.DeletePerson(id);
             return RedirectToAction("Index", "Persons");
         }
 
