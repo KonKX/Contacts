@@ -17,6 +17,8 @@ namespace ServiceContracts.DTO
         public Gender? Gender { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public string? Address { get; set; }
+        [Required(ErrorMessage = "Phone is required.")]
+        [Phone(ErrorMessage = "Phone is not in the correct format.")]
         public string? Phone { get; set; }
         public Guid? CountryId { get; set; }
         [Required(ErrorMessage = "Email is required.")]

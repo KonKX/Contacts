@@ -96,16 +96,19 @@
                 <select name="CountryID" id="CountryID" class="form-input">
                     @if (ViewBag.PersonCountryId == null)
                     {
-                        <option value="">Please Select</option>
-                    }
-                    else
-                    {
-                        <option value="@ViewBag.PersonCountryId">@ViewBag.PersonCountryName</option>
+                        <option selected value="">Please Select</option>
                     }
 
                     @foreach (CountryResponse country in ViewBag.Countries)
                     {
-                        <option value="@country.Id">@country.Name</option>
+                        if (ViewBag.PersonCountryId == country.Id)
+                        {
+                            <option selected value="@country.Id">@country.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@country.Id">@country.Name</option>
+                        }
                     }
                 </select>
                             <span asp-validation-for="CountryId" class="text-danger"></span>

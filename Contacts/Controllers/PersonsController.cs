@@ -88,7 +88,6 @@ namespace Contacts.Controllers
             var person = _personService.GetPersonById(id);
             ViewBag.Countries = _countryService.GetCountryList();
             ViewBag.PersonCountryId = person?.CountryId;
-            ViewBag.PersonCountryName = person?.CountryName;
             return View(person);
         }
 
