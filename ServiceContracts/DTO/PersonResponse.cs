@@ -27,13 +27,6 @@ namespace ServiceContracts.DTO
 
     public static class PersonExtensions
     {
-        public static ICountryService? _countryService;
-        
-        public static void Initialize(ICountryService? countryService)
-        {
-            _countryService = countryService;
-        }
-
         public static PersonResponse ToPersonResponse(this Person person)
         {
             return new PersonResponse()
@@ -46,7 +39,7 @@ namespace ServiceContracts.DTO
                 Age = (person.DateOfBirth != null) ? Math.Round((DateTime.Now - person.DateOfBirth.Value).TotalDays / 365.25) : null,
                 Address = person.Address,
                 CountryId = person.CountryId,
-                CountryName = _countryService?.GetCountryById(person.CountryId)?.Name,
+                CountryName = person.Country?.Name,
                 Email = person.Email
             };
         }

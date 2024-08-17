@@ -7,11 +7,10 @@ namespace Services
 {
     public class CountryService : ICountryService
     {
-        private readonly List<Country> _countries;
-
-        public CountryService() 
+        private readonly PersonDbContext _context;
+        public CountryService(PersonDbContext db) 
         { 
-            _countries = new List<Country>();
+            _context = db;
         }
 
         #region AddCountry
@@ -23,18 +22,19 @@ namespace Services
             }
 
             //Model validation
-            //ValidationHelper.ModelValidation(request);
+            ValidationHelper.ModelValidation(request);
 
             Country country = request.ToCountry();
             country.Id = Guid.NewGuid();
 
-            if (_countries.Exists(x => x.Name == country.Name))
+            if (_context.Countries.Any(x => x.Name == country.Name))
             {
                 throw new ArgumentException(nameof(request.Name));
             }
             else
             {
-                _countries.Add(country);
+                _context.Countries.Add(country);
+                _context.SaveChanges();
             }
 
             return country.ToCountryResponse();
@@ -42,14 +42,14 @@ namespace Services
 
         public CountryResponse? GetCountryById(Guid? id)
         {
-            return _countries.Where(x => x.Id == id).FirstOrDefault()?.ToCountryResponse();
+            return _context.Countries.FirstOrDefault(x => x.Id == id)?.ToCountryResponse();
         }
         #endregion
 
         #region GetCountries
         public IEnumerable<CountryResponse> GetCountryList()
         {
-            return _countries.Select(x => x.ToCountryResponse()).ToList();
+            return _context.Countries.Select(x => x.ToCountryResponse()).ToList();
         }
         #endregion
     }

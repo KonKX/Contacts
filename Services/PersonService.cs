@@ -1,4 +1,5 @@
 ﻿using Domain;
+using Microsoft.EntityFrameworkCore;
 using ServiceContracts;
 using ServiceContracts.DTO;
 using ServiceContracts.Enums;
@@ -13,12 +14,12 @@ namespace Services
 {
     public class PersonService : IPersonService
     {
-        private readonly List<Person> _persons;
-        public PersonService()
+        private readonly PersonDbContext _context;
+        public PersonService(PersonDbContext context)
         {
-            _persons = new List<Person>();
-            
+            _context = context;
         }
+
         #region AddPerson
         public PersonResponse AddPerson(PersonAddRequest? request)
         {
@@ -33,16 +34,18 @@ namespace Services
             Person person = request.ToPerson();
             person.Id = Guid.NewGuid();
 
-            if (_persons.Exists(x => x.Name == person.Name))
+            if (_context.Persons.Any(x => x.Name == person.Name))
             {
                 throw new ArgumentException(nameof(request.Name));
             }
             else
             {
-                _persons.Add(person);
+                _context.Persons.Add(person);
+                _context.SaveChanges();
             }
             var personResponse = person.ToPersonResponse();
-            return person.ToPersonResponse();
+
+            return personResponse;
         }
         #endregion
 
@@ -55,13 +58,16 @@ namespace Services
 
             }
 
-            var personToDelete = _persons.FirstOrDefault(x => x.Id == id);
-            if (personToDelete == null)
+            var personToRemove = _context.Persons.FirstOrDefault(x => x.Id == id);
+            if (personToRemove != null)
+            {
+                _context.Persons.Remove(personToRemove);
+                _context.SaveChanges();
+            }
+            else
             {
                 return false;
             }
-
-            _persons.RemoveAll(x => x.Id == id);
 
             return true;
         }
@@ -75,7 +81,7 @@ namespace Services
                 return null;
             }
 
-            Person? person = _persons.FirstOrDefault(x => x.Id == id);
+            Person? person = _context.Persons.Include("Country").FirstOrDefault(x => x.Id == id);
             if (person == null)
             {
                 return null;
@@ -88,7 +94,7 @@ namespace Services
         #region GetPersonList
         public IEnumerable<PersonResponse> GetPersonList()
         {
-            return _persons.Select(x => x.ToPersonResponse()).ToList();
+            return _context.Persons.Include("Country").Select(x => x.ToPersonResponse()).ToList();
         }
         #endregion
 
@@ -174,7 +180,7 @@ namespace Services
             //Validation
             ValidationHelper.ModelValidation(personUpdateRequest);
 
-            var matchingPerson = _persons.FirstOrDefault(x => x.Id == personUpdateRequest.Id);
+            var matchingPerson = _context.Persons.FirstOrDefault(x => x.Id == personUpdateRequest.Id);
 
             if (matchingPerson == null)
             {
@@ -185,8 +191,11 @@ namespace Services
             matchingPerson.Address = personUpdateRequest.Address;
             matchingPerson.Gender = personUpdateRequest.Gender.ToString();
             matchingPerson.Email = personUpdateRequest.Email;
+            matchingPerson.Phone = personUpdateRequest.Phone;
             matchingPerson.CountryId = personUpdateRequest.CountryId;
             matchingPerson.DateOfBirth = personUpdateRequest.DateOfBirth;
+
+            _context.SaveChanges();
 
             return matchingPerson.ToPersonResponse();
         }

@@ -22,22 +22,6 @@ namespace Contacts.Controllers
         [Route("/")]
         public IActionResult Index(string? searchBy, string? searchString)
         {
-            if (_webHostEnvironment.IsDevelopment())
-            {
-                if (_countryService.GetCountryList().Count() == 0)
-                {
-                    _countryService.AddCountry(new CountryAddRequest() { Name = "USA" });
-                    _countryService.AddCountry(new CountryAddRequest() { Name = "Greece" });
-                }
-                if (_personService.GetPersonList().Count() == 0)
-                {
-                    _personService.AddPerson(new PersonAddRequest() { Name = "Joe Rogan", Address = "South Bronx", CountryId = _countryService.GetCountryList().ToList()[0].Id, DateOfBirth = DateTime.Parse("1969-01-01"), Email = "test_email_1@gmail.com", Gender = Gender.Male, Phone = "6954157890" });
-                    _personService.AddPerson(new PersonAddRequest() { Name = "Kyriakos Grizzly", Address = "Sideradiko", CountryId = _countryService.GetCountryList().ToList()[1].Id, DateOfBirth = DateTime.Parse("1961-01-02"), Email = "test_email_2@gmail.com", Gender = Gender.Male, Phone = "6974587815" });
-                    _personService.AddPerson(new PersonAddRequest() { Name = "Pepa", Address = "Nea Erythraia", CountryId = _countryService.GetCountryList().ToList()[1].Id, DateOfBirth = DateTime.Parse("1992-08-03"), Email = "test_email_3@gmail.com", Gender = Gender.Female, Phone = "6934247817" });
-                    _personService.AddPerson(new PersonAddRequest() { Name = "Tony Montana", Address = "Brooklyn", CountryId = _countryService.GetCountryList().ToList()[0].Id, DateOfBirth = DateTime.Parse("1973-02-04"), Email = "test_email_4@gmail.com", Gender = Gender.Male, Phone = "6935967196" });
-                }
-            }
-
             ViewBag.SearchOptions = new Dictionary<string, string>()
             {
                 { nameof(PersonResponse.Name),"Name"},

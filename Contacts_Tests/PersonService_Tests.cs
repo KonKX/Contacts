@@ -1,4 +1,5 @@
 ﻿using Domain;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using ServiceContracts;
@@ -13,11 +14,18 @@ namespace Services.Tests
     [TestClass]
     public class PersonServiceTests
     {
-        private PersonService _personService;
+        private IPersonService? _personService;
+        private PersonDbContext? _context;
 
-        public PersonServiceTests()
+        [TestInitialize]
+        public void Setup()
         {
-            _personService = new PersonService();
+            var options = new DbContextOptionsBuilder<PersonDbContext>()
+                .UseInMemoryDatabase(databaseName: "TestDatabase") // Use an in-memory database for testing
+                .Options;
+
+            _context = new PersonDbContext(options);
+            _personService = new PersonService(_context);
         }
 
         #region AddPerson
@@ -52,7 +60,7 @@ namespace Services.Tests
         [TestMethod]
         public void AddPerson_WhenRequestIsValid_AddsPersonSuccessfully()
         {
-            var request = new PersonAddRequest { Name = "Jane Doe", Email = "test@gmail.com" };
+            var request = new PersonAddRequest { Name = "Jane Doe", Email = "test@gmail.com", Phone = "0000000000" };
 
             var response = _personService.AddPerson(request);
 
@@ -66,7 +74,11 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonById_WhenIdIsValid_ReturnsPerson()
         {
-            var request = new PersonAddRequest { Name = "John Doe", Email = "test@gmail.com" };
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
+            var request = new PersonAddRequest { Name = "John Doe", Email = "test@gmail.com", Phone = "0000000000" };
             var addedPerson = _personService.AddPerson(request);
 
             var existingId = addedPerson?.Id;
@@ -104,8 +116,12 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonList_WhenListContainsMultiplePersons_ReturnsAllPersons()
         {
-            _personService.AddPerson(new PersonAddRequest { Name = "John Doe", Email = "john.doe@gmail.com" });
-            _personService.AddPerson(new PersonAddRequest { Name = "Jane Doe", Email = "jane.doe@gmail.com" });
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
+            _personService.AddPerson(new PersonAddRequest { Name = "John Doe", Email = "john.doe@gmail.com", Phone = "0000000000" });
+            _personService.AddPerson(new PersonAddRequest { Name = "Jane Doe", Email = "jane.doe@gmail.com", Phone = "0000000000" });
 
             var result = _personService.GetPersonList();
             Assert.AreEqual(2, result?.Count());
@@ -114,6 +130,10 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonList_WhenListIsEmpty_ReturnsEmptyList()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             var result = _personService.GetPersonList();
             Assert.AreEqual(0, result?.Count());
         }
@@ -121,7 +141,11 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonList_WhenListContainsOnePerson_ReturnsSinglePerson()
         {
-            _personService.AddPerson(new PersonAddRequest { Name = "John Doe", Email = "john.doe@gmail.com" });
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
+            _personService.AddPerson(new PersonAddRequest { Name = "John Doe", Email = "john.doe@gmail.com", Phone = "0000000000" });
             var result = _personService.GetPersonList();
             Assert.AreEqual(1, result?.Count());
             Assert.AreEqual("John Doe", result?.First().Name);
@@ -132,12 +156,16 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListFiltered_ReturnsFullList_WhenSearchByIsNullOrEmpty()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string? searchBy = null;
             string? searchString = null;
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Phone = "0000000000",  Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
             var result = _personService.GetPersonListFiltered(searchBy, searchString);
 
             Assert.AreEqual(4, result?.Count());
@@ -146,12 +174,16 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListFiltered_FiltersByName()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string searchBy = nameof(Person.Name);
             string searchString = "John";
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
 
             var result = _personService.GetPersonListFiltered(searchBy, searchString);
 
@@ -162,12 +194,16 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListFiltered_FiltersByEmail()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string searchBy = nameof(Person.Email);
             string searchString = "example.com";
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
 
             var result = _personService.GetPersonListFiltered(searchBy, searchString);
 
@@ -177,12 +213,16 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListFiltered_FiltersByDateOfBirth()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string searchBy = nameof(Person.DateOfBirth);
             string searchString = "01 January 1980";
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Phone = "0000000000",Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
 
             var result = _personService.GetPersonListFiltered(searchBy, searchString);
 
@@ -192,12 +232,16 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListFiltered_ReturnsEmpty_WhenNoMatches()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string searchBy = nameof(Person.Address);
             string searchString = "Nonexistent Address";
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
 
             var result = _personService.GetPersonListFiltered(searchBy, searchString);
 
@@ -207,12 +251,16 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListFiltered_ReturnsFullList_WhenInvalidSearchBy()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string searchBy = "InvalidProperty";
             string searchString = "some value";
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Johnny Depp", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
 
             var result = _personService.GetPersonListFiltered(searchBy, searchString);
 
@@ -224,14 +272,18 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListOrdered_ReturnsOriginalList_WhenOrderByIsNull()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string? orderBy = null;
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
             var _personList = _personService.GetPersonList();
 
-            var result = _personService.GetPersonListOrdered(_personList, orderBy);
+            var result = _personService.GetPersonListOrdered(_personList, orderBy, null);
 
             // Assert
             Assert.IsTrue(result.SequenceEqual(_personList));
@@ -240,11 +292,15 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListOrdered_OrdersByName_ASC()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string orderBy = nameof(PersonResponse.Name);
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
             var _personList = _personService.GetPersonList();
             SortOrderOptions orderType = SortOrderOptions.ASC;
 
@@ -258,11 +314,15 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListOrdered_OrdersByName_DESC()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string orderBy = nameof(PersonResponse.Name);
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
             var _personList = _personService.GetPersonList();
             SortOrderOptions orderType = SortOrderOptions.DESC;
 
@@ -275,11 +335,15 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListOrdered_OrdersByDateOfBirth_ASC()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string orderBy = nameof(PersonResponse.DateOfBirth);
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
             var _personList = _personService.GetPersonList();
             SortOrderOptions orderType = SortOrderOptions.ASC;
 
@@ -292,11 +356,15 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListOrdered_OrdersByDateOfBirth_DESC()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string orderBy = nameof(PersonResponse.DateOfBirth);
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
             var _personList = _personService.GetPersonList();
             SortOrderOptions orderType = SortOrderOptions.DESC;
 
@@ -309,11 +377,15 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListOrdered_OrdersByEmail_ASC()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string orderBy = nameof(PersonResponse.Email);
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
             var _personList = _personService.GetPersonList();
             SortOrderOptions orderType = SortOrderOptions.ASC;
 
@@ -326,11 +398,15 @@ namespace Services.Tests
         [TestMethod]
         public void GetPersonListOrdered_OrdersByEmail_DESC()
         {
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             string orderBy = nameof(PersonResponse.Email);
-            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
-            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
-            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
-            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
+            var person_1 = _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Phone = "0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1) });
+            var person_2 = _personService.AddPerson(new PersonAddRequest() { Name = "George Doe", Phone = "0000000000", Gender = Gender.Male, Address = "345 Elm St", Email = "nope@example.com", DateOfBirth = new DateTime(1985, 2, 5) });
+            var person_3 = _personService.AddPerson(new PersonAddRequest() { Name = "Jack Doe", Phone = "0000000000", Gender = Gender.Male, Address = "567 Elm St", Email = "test@example.com", DateOfBirth = new DateTime(1970, 5, 13) });
+            var person_4 = _personService.AddPerson(new PersonAddRequest() { Name = "Jim Doe", Phone = "0000000000", Gender = Gender.Male, Address = "789 Elm St", Email = "whatever@example.com", DateOfBirth = new DateTime(1999, 12, 12) });
             var _personList = _personService.GetPersonList();
             SortOrderOptions orderType = SortOrderOptions.DESC;
 
@@ -371,8 +447,12 @@ namespace Services.Tests
         [TestMethod]
         public void UpdatePerson_ShouldUpdatePersonSuccessfully()
         {
-            _personService.AddPerson(new PersonAddRequest { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1), CountryId = new Guid() });
-            _personService.AddPerson(new PersonAddRequest { Name = "Jane Smith", Gender = Gender.Female, Address = "456 Oak St", Email = "jane.smith@example.com", DateOfBirth = new DateTime(1990, 2, 2), CountryId = new Guid() });
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
+            _personService.AddPerson(new PersonAddRequest { Name = "John Doe", Phone="0000000000", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1), CountryId = new Guid() });
+            _personService.AddPerson(new PersonAddRequest { Name = "Jane Smith", Phone = "0000000000", Gender = Gender.Female, Address = "456 Oak St", Email = "jane.smith@example.com", DateOfBirth = new DateTime(1990, 2, 2), CountryId = new Guid() });
             var _personList = _personService.GetPersonList();
 
             var existingPerson = _personList.First();
@@ -421,8 +501,12 @@ namespace Services.Tests
         [TestMethod]
         public void DeletePerson_ShouldReturnTrue_WhenPersonIsDeleted()
         {
-            _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1), CountryId = new Guid() });
-            _personService.AddPerson(new PersonAddRequest() { Name = "Jane Smith", Gender = Gender.Female, Address = "456 Oak St", Email = "jane.smith@example.com", DateOfBirth = new DateTime(1990, 2, 2), CountryId = new Guid() });
+            var allRecords = _context?.Persons.ToList();
+            _context?.Persons.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
+            _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1), CountryId = new Guid(), Phone = "0000000000" });
+            _personService.AddPerson(new PersonAddRequest() { Name = "Jane Smith", Gender = Gender.Female, Address = "456 Oak St", Email = "jane.smith@example.com", DateOfBirth = new DateTime(1990, 2, 2), CountryId = new Guid(), Phone = "0000000000" });
             var _personList = _personService.GetPersonList();
 
             var existingPersonId = _personList.First().Id;
@@ -437,8 +521,8 @@ namespace Services.Tests
         [TestMethod]
         public void DeletePerson_ShouldDecreaseCount_WhenPersonIsDeleted()
         {
-            _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1), CountryId = new Guid() });
-            _personService.AddPerson(new PersonAddRequest() { Name = "Jane Smith", Gender = Gender.Female, Address = "456 Oak St", Email = "jane.smith@example.com", DateOfBirth = new DateTime(1990, 2, 2), CountryId = new Guid() });
+            _personService.AddPerson(new PersonAddRequest() { Name = "John Doe", Gender = Gender.Male, Address = "123 Elm St", Email = "john.doe@example.com", DateOfBirth = new DateTime(1980, 1, 1), CountryId = new Guid(), Phone = "0000000000" });
+            _personService.AddPerson(new PersonAddRequest() { Name = "Jane Smith", Gender = Gender.Female, Address = "456 Oak St", Email = "jane.smith@example.com", DateOfBirth = new DateTime(1990, 2, 2), CountryId = new Guid(), Phone = "0000000000" });
             var _personList = _personService.GetPersonList();
 
             var existingPersonId = _personList.First().Id;

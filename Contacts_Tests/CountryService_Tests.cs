@@ -1,3 +1,5 @@
+using Domain;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ServiceContracts;
 using ServiceContracts.DTO;
@@ -10,11 +12,17 @@ namespace Services.Tests
     public class CountryServiceTests
     {
         private ICountryService? _countryService;
+        private PersonDbContext? _context;
 
         [TestInitialize]
         public void Setup()
         {
-            _countryService = new CountryService();
+            var options = new DbContextOptionsBuilder<PersonDbContext>()
+                .UseInMemoryDatabase(databaseName: "TestDatabase") // Use an in-memory database for testing
+                .Options;
+
+            _context = new PersonDbContext(options);
+            _countryService = new CountryService(_context);
         }
 
         #region AddCountry
@@ -61,6 +69,10 @@ namespace Services.Tests
         [TestMethod]
         public void GetCountryList_WhenListIsEmpty_ReturnsEmptyList()
         {
+            var allRecords = _context?.Countries.ToList();
+            _context?.Countries.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             var result = _countryService?.GetCountryList();
             Assert.IsNotNull(result);
             Assert.AreEqual(0, result.Count());
@@ -69,11 +81,15 @@ namespace Services.Tests
         [TestMethod]
         public void GetCountryList_WhenListHasCountries_ReturnsCountryList()
         {
+            var allRecords = _context?.Countries.ToList();
+            _context?.Countries.RemoveRange(allRecords);
+            _context?.SaveChanges();
+
             var request1 = new CountryAddRequest { Name = "Country1" };
             var request2 = new CountryAddRequest { Name = "Country2" };
 
-            _countryService?.AddCountry(request1);
             _countryService?.AddCountry(request2);
+            _countryService?.AddCountry(request1);
 
             var result = _countryService?.GetCountryList();
 
