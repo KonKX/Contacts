@@ -49,5 +49,10 @@ namespace ServiceContracts
         /// <param name="id"></param>
         /// <returns></returns>
         public Task<bool> DeletePerson(Guid? id);
+        /// <summary>
+        /// Return persons list as CSV
+        /// </summary>
+        /// <returns></returns>
+        public Task<MemoryStream> GetPersonsCSV();
     }
 }

@@ -1,4 +1,5 @@
-﻿using Domain;
+﻿using CsvHelper;
+using Domain;
 using Microsoft.EntityFrameworkCore;
 using ServiceContracts;
 using ServiceContracts.DTO;
@@ -6,6 +7,8 @@ using ServiceContracts.Enums;
 using Services.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Formats.Asn1;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -52,7 +55,7 @@ namespace Services
         #region DeletePerson
         public async Task<bool> DeletePerson(Guid? id)
         {
-            if (id == null) 
+            if (id == null)
             {
                 throw new ArgumentNullException("Please provide an ID");
 
@@ -102,7 +105,7 @@ namespace Services
         public async Task<IEnumerable<PersonResponse>> GetPersonListFiltered(string? searchBy, string? searchString)
         {
             IEnumerable<PersonResponse> fullPersonList = await GetPersonList();
-            
+
             if (string.IsNullOrEmpty(searchBy) || string.IsNullOrEmpty(searchString))
             {
                 return fullPersonList;
@@ -132,7 +135,7 @@ namespace Services
                     matchingPersonList = fullPersonList.Where(x => x.DateOfBirth == null || x.DateOfBirth.Value.ToString("dd MMMM yyyy").Contains(searchString, StringComparison.OrdinalIgnoreCase));
                     break;
                 default:
-                    matchingPersonList = fullPersonList; 
+                    matchingPersonList = fullPersonList;
                     break;
             }
 
@@ -186,7 +189,7 @@ namespace Services
             {
                 throw new ArgumentException("Person not found.");
             }
-            
+
             matchingPerson.Name = personUpdateRequest.Name;
             matchingPerson.Address = personUpdateRequest.Address;
             matchingPerson.Gender = personUpdateRequest.Gender.ToString();
@@ -198,6 +201,23 @@ namespace Services
             await _context.SaveChangesAsync();
 
             return matchingPerson.ToPersonResponse();
+        }
+        #endregion
+
+        #region GetPersonsCSV
+        public async Task<MemoryStream> GetPersonsCSV()
+        {
+            var memoryStream = new MemoryStream();
+            using (var writer = new StreamWriter(memoryStream, leaveOpen: true))
+            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+            {
+                var personsList = await GetPersonList();
+                csv.WriteRecords(personsList);
+                writer.Flush();
+                memoryStream.Position = 0;
+
+                return memoryStream;
+            }
         }
         #endregion
     }

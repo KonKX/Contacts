@@ -99,6 +99,13 @@ namespace Contacts.Controllers
         }
 
         [Route("[action]")]
+        public async Task<IActionResult> GetCSV(Guid id)
+        {
+            var report = await _personService.GetPersonsCSV();
+            return File(report, "text/csv", $"contacts_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.csv");
+        }
+
+        [Route("[action]")]
         public IActionResult About()
         {
             return View();

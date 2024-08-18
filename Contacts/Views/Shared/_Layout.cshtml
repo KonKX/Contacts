@@ -17,10 +17,13 @@
             <div class="navbar-brand">My Contacts</div>
             <ul>
                 <li>
-                    <a href="~/persons/create">Create New</a>
+                    <a asp-controller="persons" asp-action="create">Create New</a>
                 </li>
                 <li>
-                    <a href="~/persons/about">About</a>
+                    <a asp-controller="persons" asp-action="getcsv">Generate CSV</a>
+                </li>
+                <li>
+                    <a asp-controller="persons" asp-action="about">About</a>
                 </li>
             </ul>
         </div>
