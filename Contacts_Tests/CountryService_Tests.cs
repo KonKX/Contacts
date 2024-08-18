@@ -5,6 +5,7 @@ using ServiceContracts;
 using ServiceContracts.DTO;
 using Services;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Services.Tests
 {
@@ -28,24 +29,24 @@ namespace Services.Tests
         #region AddCountry
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
-        public void AddCountry_RequestIsNull_ThrowsArgumentNullException()
+        public async Task AddCountry_RequestIsNull_ThrowsArgumentNullException()
         {
-            _countryService?.AddCountry(null);
+            await _countryService?.AddCountry(null)!;
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
-        public void AddCountry_RequestNameIsNull_ThrowsArgumentException()
+        public async Task AddCountry_RequestNameIsNull_ThrowsArgumentException()
         {
             var request = new CountryAddRequest { Name = null };
-            _countryService?.AddCountry(request);
+            await _countryService?.AddCountry(request)!;
         }
 
         [TestMethod]
-        public void AddCountry_ValidRequest_AddsCountrySuccessfully()
+        public async Task AddCountry_ValidRequest_AddsCountrySuccessfully()
         {
             var request = new CountryAddRequest { Name = "TestCountry" };
-            var response = _countryService?.AddCountry(request);
+            var response = await _countryService?.AddCountry(request)!;
 
             Assert.IsNotNull(response);
             Assert.AreEqual("TestCountry", response.Name);
@@ -53,37 +54,39 @@ namespace Services.Tests
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
-        public void AddCountry_DuplicateCountryName_ThrowsArgumentException()
+        public async Task AddCountry_DuplicateCountryName_ThrowsArgumentException()
         {
             var request1 = new CountryAddRequest { Name = "DuplicateCountry" };
             var request2 = new CountryAddRequest { Name = "DuplicateCountry" };
 
-            _countryService?.AddCountry(request1);
+            await _countryService?.AddCountry(request1)!;
 
             // This should throw an ArgumentException
-            _countryService?.AddCountry(request2);
+            await _countryService?.AddCountry(request2)!;
         }
         #endregion
 
         #region GetCountryList
         [TestMethod]
-        public void GetCountryList_WhenListIsEmpty_ReturnsEmptyList()
+        public async Task GetCountryList_WhenListIsEmpty_ReturnsEmptyList()
         {
             var allRecords = _context?.Countries.ToList();
-            _context?.Countries.RemoveRange(allRecords);
-            _context?.SaveChanges();
+            _context?.Countries.RemoveRange(allRecords!);
+            await _context?.SaveChangesAsync()!;
 
-            var result = _countryService?.GetCountryList();
+            var count = _context?.Countries.Count();
+
+            var result = await _countryService?.GetCountryList()!;
             Assert.IsNotNull(result);
-            Assert.AreEqual(0, result.Count());
+            Assert.AreEqual(0, count);
         }
 
         [TestMethod]
-        public void GetCountryList_WhenListHasCountries_ReturnsCountryList()
+        public async Task GetCountryList_WhenListHasCountries_ReturnsCountryList()
         {
             var allRecords = _context?.Countries.ToList();
-            _context?.Countries.RemoveRange(allRecords);
-            _context?.SaveChanges();
+            _context?.Countries.RemoveRange(allRecords!);
+            await _context?.SaveChangesAsync()!;
 
             var request1 = new CountryAddRequest { Name = "Country1" };
             var request2 = new CountryAddRequest { Name = "Country2" };
@@ -91,10 +94,11 @@ namespace Services.Tests
             _countryService?.AddCountry(request2);
             _countryService?.AddCountry(request1);
 
-            var result = _countryService?.GetCountryList();
+            var result = await _countryService?.GetCountryList()!;
+            var count = result.Count();
 
             Assert.IsNotNull(result);
-            Assert.AreEqual(2, result.Count());
+            Assert.AreEqual(2, count);
             Assert.AreEqual("Country1", result.ToList()[0].Name);
             Assert.AreEqual("Country2", result.ToList()[1].Name);
         }
@@ -102,29 +106,29 @@ namespace Services.Tests
         
         #region GetCountryById
         [TestMethod]
-        public void GetCountryById_WhenIdIsNull_ReturnsNull()
+        public async Task GetCountryById_WhenIdIsNull_ReturnsNull()
         {
-            var result = _countryService?.GetCountryById(null);
+            var result =await _countryService?.GetCountryById(null)!;
             Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void GetCountryById_WhenIdDoesNotExist_ReturnsNull()
+        public async Task GetCountryById_WhenIdDoesNotExist_ReturnsNull()
         {
             var nonExistentId = Guid.NewGuid();
-            var result = _countryService?.GetCountryById(nonExistentId);
+            var result = await _countryService?.GetCountryById(nonExistentId)!;
             Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void GetCountryById_WhenIdExists_ReturnsCountryResponse()
+        public async Task GetCountryById_WhenIdExists_ReturnsCountryResponse()
         {
             var request = new CountryAddRequest { Name = "Country1" };
-            var addedCountry = _countryService?.AddCountry(request);
+            var addedCountry = await _countryService?.AddCountry(request)!;
 
             var existingId = addedCountry?.Id;
 
-            var result = _countryService?.GetCountryById(existingId);
+            var result = await _countryService?.GetCountryById(existingId)!;
 
             Assert.IsNotNull(result);
             Assert.AreEqual(addedCountry?.Name, result.Name);

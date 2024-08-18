@@ -9,17 +9,17 @@ namespace ServiceContracts
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public CountryResponse AddCountry(CountryAddRequest? request);
+        public Task<CountryResponse> AddCountry(CountryAddRequest? request);
         /// <summary>
         /// Get a country by its ID number.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public CountryResponse? GetCountryById(Guid? id);
+        public Task<CountryResponse?> GetCountryById(Guid? id);
         /// <summary>
         /// Get the full list of countries.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<CountryResponse> GetCountryList();
+        public Task<IEnumerable<CountryResponse>> GetCountryList();
     }
 }

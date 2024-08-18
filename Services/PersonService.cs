@@ -21,7 +21,7 @@ namespace Services
         }
 
         #region AddPerson
-        public PersonResponse AddPerson(PersonAddRequest? request)
+        public async Task<PersonResponse> AddPerson(PersonAddRequest? request)
         {
             if (request == null)
             {
@@ -41,7 +41,7 @@ namespace Services
             else
             {
                 _context.Persons.Add(person);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
             var personResponse = person.ToPersonResponse();
 
@@ -50,7 +50,7 @@ namespace Services
         #endregion
 
         #region DeletePerson
-        public bool DeletePerson(Guid? id)
+        public async Task<bool> DeletePerson(Guid? id)
         {
             if (id == null) 
             {
@@ -58,11 +58,11 @@ namespace Services
 
             }
 
-            var personToRemove = _context.Persons.FirstOrDefault(x => x.Id == id);
+            var personToRemove = await _context.Persons.FirstOrDefaultAsync(x => x.Id == id);
             if (personToRemove != null)
             {
                 _context.Persons.Remove(personToRemove);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
             else
             {
@@ -74,14 +74,14 @@ namespace Services
         #endregion
 
         #region GetPersonById
-        public PersonResponse? GetPersonById(Guid? id)
+        public async Task<PersonResponse?> GetPersonById(Guid? id)
         {
             if (id == null)
             {
                 return null;
             }
 
-            Person? person = _context.Persons.Include("Country").FirstOrDefault(x => x.Id == id);
+            Person? person = await _context.Persons.Include("Country").FirstOrDefaultAsync(x => x.Id == id);
             if (person == null)
             {
                 return null;
@@ -92,16 +92,16 @@ namespace Services
         #endregion
 
         #region GetPersonList
-        public IEnumerable<PersonResponse> GetPersonList()
+        public async Task<IEnumerable<PersonResponse>> GetPersonList()
         {
-            return _context.Persons.Include("Country").Select(x => x.ToPersonResponse()).ToList();
+            return await _context.Persons.Include("Country").Select(x => x.ToPersonResponse()).ToListAsync();
         }
         #endregion
 
         #region GetPersonListFiltered
-        public IEnumerable<PersonResponse> GetPersonListFiltered(string? searchBy, string? searchString)
+        public async Task<IEnumerable<PersonResponse>> GetPersonListFiltered(string? searchBy, string? searchString)
         {
-            IEnumerable<PersonResponse> fullPersonList = GetPersonList();
+            IEnumerable<PersonResponse> fullPersonList = await GetPersonList();
             
             if (string.IsNullOrEmpty(searchBy) || string.IsNullOrEmpty(searchString))
             {
@@ -170,7 +170,7 @@ namespace Services
         #endregion
 
         #region UpdatePerson
-        public PersonResponse UpdatePerson(PersonUpdateRequest? personUpdateRequest)
+        public async Task<PersonResponse> UpdatePerson(PersonUpdateRequest? personUpdateRequest)
         {
             if (personUpdateRequest == null)
             {
@@ -180,7 +180,7 @@ namespace Services
             //Validation
             ValidationHelper.ModelValidation(personUpdateRequest);
 
-            var matchingPerson = _context.Persons.FirstOrDefault(x => x.Id == personUpdateRequest.Id);
+            var matchingPerson = await _context.Persons.FirstOrDefaultAsync(x => x.Id == personUpdateRequest.Id);
 
             if (matchingPerson == null)
             {
@@ -195,7 +195,7 @@ namespace Services
             matchingPerson.CountryId = personUpdateRequest.CountryId;
             matchingPerson.DateOfBirth = personUpdateRequest.DateOfBirth;
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return matchingPerson.ToPersonResponse();
         }

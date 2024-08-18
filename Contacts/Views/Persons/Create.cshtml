@@ -88,7 +88,7 @@
             <div class="flex-1">
                 <select name="CountryID" id="CountryID" class="form-input">
                     <option value="">Please Select</option>
-                    @foreach (CountryResponse country in ViewBag.Countries)
+                    @foreach (var country in ViewBag.Countries)
                     {
                         <option value="@country.Id">@country.Name</option>
                     }

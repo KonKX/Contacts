@@ -1,4 +1,5 @@
 ﻿using Domain;
+using Microsoft.EntityFrameworkCore;
 using ServiceContracts;
 using ServiceContracts.DTO;
 using Services.Helpers;
@@ -14,7 +15,7 @@ namespace Services
         }
 
         #region AddCountry
-        public CountryResponse AddCountry(CountryAddRequest? request)
+        public async Task<CountryResponse> AddCountry(CountryAddRequest? request)
         {
             if (request == null)
             {
@@ -34,22 +35,22 @@ namespace Services
             else
             {
                 _context.Countries.Add(country);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
 
             return country.ToCountryResponse();
         }
 
-        public CountryResponse? GetCountryById(Guid? id)
+        public async Task<CountryResponse?> GetCountryById(Guid? id)
         {
-            return _context.Countries.FirstOrDefault(x => x.Id == id)?.ToCountryResponse();
+            return (await _context.Countries.FirstOrDefaultAsync(x => x.Id == id))?.ToCountryResponse();
         }
         #endregion
 
         #region GetCountries
-        public IEnumerable<CountryResponse> GetCountryList()
+        public async Task<IEnumerable<CountryResponse>> GetCountryList()
         {
-            return _context.Countries.Select(x => x.ToCountryResponse()).ToList();
+            return await _context.Countries.Select(x => x.ToCountryResponse()).ToListAsync();
         }
         #endregion
     }
