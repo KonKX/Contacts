@@ -13,22 +13,42 @@
 </head>
 <body>
     <div class="container">
-        <div class="navbar">
-            <div class="navbar-brand">My Contacts</div>
-            <ul>
-                <li>
-                    <a asp-controller="persons" asp-action="create">Create New</a>
-                </li>
-                <li>
-                    <a asp-controller="persons" asp-action="getcsv">Generate CSV</a>
-                </li>
-                <li>
-                    <a asp-controller="persons" asp-action="about">About</a>
-                </li>
-            </ul>
-        </div>
         <div class="page-content">
-            @RenderBody()
+            <div class="margin-bottom">
+                <div class="flex" id="top-bar-div">
+                    <div class="flex-1">
+                        <div class="navbar">
+                            <ul>
+                                <li>
+                                    <a asp-controller="persons" asp-action="create">Create New</a>
+                                </li>
+                                <li>
+                                    <a asp-controller="persons" asp-action="getcsv">Generate CSV</a>
+                                </li>
+                                <li>
+                                    <a asp-controller="persons" asp-action="about">About</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="flex-1" id="search-box-div">
+                        <div class="navbar account-links">
+                            <ul>
+                                <li>
+                                    <a asp-controller="account" asp-action="register">Register</a>
+                                </li>
+                                <li>
+                                    <a asp-controller="account" asp-action="login">Login</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="body">
+                @RenderBody()
+            </div>
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
